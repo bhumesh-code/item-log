@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#f4f6f8; --surface:#fff; --surface-2:#eef2f5; --fg:#15232e; --muted:#5d6d79; --line:#d8e0e6;
+  --accent:#0b6e8a; --accent-fg:#fff; --ok:#1d7a4a; --ok-soft:#dcf1e4; --warn:#a4560b; --warn-soft:#fbe9d4; --danger:#b3261e;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0f171d; --surface:#16212a; --surface-2:#1c2a35; --fg:#e4ecf1; --muted:#93a4b0; --line:#2a3a46;
+  --accent:#4cb3d0; --accent-fg:#06222b; --ok:#5cc98b; --ok-soft:#173527; --warn:#f0a25a; --warn-soft:#3a2716; --danger:#f2766c; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.45}
+[hidden]{display:none!important}
+.bar{position:fixed;top:0;left:0;right:0;height:4px;background:var(--surface-2);z-index:5}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .35s ease}
+.top{max-width:760px;margin:0 auto;padding:18px 20px 0;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+form{min-height:calc(100vh - 40px);display:flex;align-items:center;max-width:760px;margin:0 auto;padding:24px 20px 110px}
+.q{display:none;width:100%;gap:18px}
+.q.on{display:grid}
+@media (prefers-reduced-motion:no-preference){.q.on.fwd{animation:up .4s cubic-bezier(.2,.8,.2,1)}.q.on.back{animation:down .4s cubic-bezier(.2,.8,.2,1)}}
+@keyframes up{from{opacity:0;transform:translateY(36px)}to{opacity:1;transform:none}}
+@keyframes down{from{opacity:0;transform:translateY(-36px)}to{opacity:1;transform:none}}
+h2{font-size:clamp(22px,4.6vw,30px);line-height:1.25;margin:0;font-weight:500;display:flex;gap:10px}
+h2 .n{color:var(--accent);font-size:.62em;font-weight:600;padding-top:.55em;white-space:nowrap}
+.req{color:var(--accent)}
+.welcome h2{font-size:clamp(30px,7vw,44px);font-weight:600;display:block}
+.help{color:var(--muted);margin:-8px 0 0}
+.in{font:inherit;font-size:clamp(20px,4.4vw,26px);border:0;border-bottom:2px solid var(--line);border-radius:0;background:transparent;color:var(--fg);padding:8px 2px;width:100%}
+.in:focus{outline:none;border-bottom-color:var(--accent)}
+.in.mono{font-family:var(--mono);font-size:clamp(18px,4vw,24px)}
+textarea.in{min-height:110px;resize:vertical;font-size:clamp(17px,3.6vw,20px)}
+.row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+button{font:inherit;cursor:pointer;border-radius:6px}
+.ok{background:var(--accent);color:var(--accent-fg);border:0;font-weight:600;font-size:17px;padding:11px 22px}
+.ok:disabled{opacity:.6;cursor:wait}
+.key{font-size:12.5px;color:var(--muted)}
+.choices{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;max-width:620px}
+.choices.two{grid-template-columns:repeat(2,minmax(0,200px))}
+.choice{display:flex;align-items:center;gap:10px;text-align:left;padding:10px 12px;font-size:17px;border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line));background:color-mix(in srgb,var(--accent) 7%,var(--surface));color:var(--fg)}
+.choice kbd{font-family:var(--mono);font-size:12px;min-width:24px;height:24px;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--accent) 55%,var(--line));border-radius:4px;background:var(--surface);color:var(--accent)}
+.choice[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.choice[aria-pressed="true"] kbd{background:var(--accent-fg);color:var(--accent)}
+.err{color:var(--danger);font-size:14px;min-height:1.2em}
+.note{font-size:14px;color:var(--warn);background:var(--warn-soft);padding:8px 12px;border-radius:6px;justify-self:start}
+.shot{display:grid;gap:12px;justify-items:start}
+.shot img{max-height:260px;max-width:100%;border-radius:8px;border:1px solid var(--line)}
+.big{display:inline-block;cursor:pointer;font-size:18px;padding:16px 22px;border:2px dashed color-mix(in srgb,var(--accent) 55%,var(--line));background:color-mix(in srgb,var(--accent) 7%,var(--surface));color:var(--accent);border-radius:10px;font-weight:600}
+.review{display:grid;border-top:1px solid var(--line);max-width:620px}
+.review button{display:grid;grid-template-columns:120px minmax(0,1fr);gap:12px;text-align:left;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;padding:11px 2px;font-size:15px;color:var(--fg)}
+.review span:first-child{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em;padding-top:2px}
+.review span:last-child{word-break:break-word}
+.review img{width:64px;height:64px;object-fit:cover;border-radius:6px}
+.nav{position:fixed;right:16px;bottom:16px;display:flex;gap:2px}
+.nav button{background:var(--accent);color:var(--accent-fg);border:0;width:42px;height:38px;font-size:18px;border-radius:0}
+.nav button:first-child{border-radius:6px 0 0 6px}.nav button:last-child{border-radius:0 6px 6px 0}
+.done{width:56px;height:56px;border-radius:50%;background:var(--ok-soft);color:var(--ok);display:grid;place-items:center;font-size:28px}
+dialog{border:0;border-radius:12px;padding:0;width:min(92vw,760px);background:var(--surface);color:var(--fg)}
+dialog::backdrop{background:rgba(5,12,18,.75)}
+dialog video{display:block;width:100%;max-height:70vh;background:#000}
+dialog .cap{display:flex;justify-content:flex-end;gap:8px;padding:10px 14px}
+dialog .cap button{padding:9px 14px;border:1px solid var(--line);background:var(--surface);color:var(--fg)}
+dialog .cap .ok{border:0;background:var(--accent);color:var(--accent-fg)}
+@media (max-width:700px){.key{display:none}.choices,.choices.two{grid-template-columns:1fr 1fr}.review button{grid-template-columns:96px minmax(0,1fr)}}
+</style>
+</head>
+<body>
+<div class="bar"><i id="bar"></i></div>
+<div class="top">Washmen · Item log</div>
+<form id="f" novalidate autocomplete="off">
+  <section class="q welcome on">
+    <h2>Log an item</h2>
+    <p class="help" style="margin:0">7 quick questions: date, item type, QR, RFID, rectified, remarks and a picture.</p>
+    <label for="tName" style="font-weight:500;margin-top:6px">Your name<span class="req">*</span></label>
+    <input class="in" id="tName" placeholder="Type your name" autocomplete="name" style="max-width:420px">
+    <div class="err"></div>
+    <div class="row"><button type="button" class="ok" data-next>Start</button><span class="key">press <b>Enter ↵</b></span></div>
+  </section>
+  <section class="q">
+    <h2><span class="n">1 →</span><span>What date was this item checked?<span class="req">*</span></span></h2>
+    <input type="date" class="in" id="tDate">
+    <div class="err"></div>
+    <div class="row"><button type="button" class="ok" data-next>OK</button><span class="key">press <b>Enter ↵</b></span></div>
+  </section>
+  <section class="q">
+    <h2><span class="n">2 →</span><span>What type of item is it?<span class="req">*</span></span></h2>
+    <div class="choices" id="types"></div>
+    <input class="in" id="tOther" placeholder="Type the item type…" hidden>
+    <div class="err"></div>
+    <div class="row"><button type="button" class="ok" data-next>OK</button><span class="key">press a <b>letter</b> to pick</span></div>
+  </section>
+  <section class="q">
+    <h2><span class="n">3 →</span><span>Scan or type the item QR code<span class="req">*</span></span></h2>
+    <input class="in mono" id="tQr" placeholder="Item QR code" autocapitalize="off" spellcheck="false">
+    <div class="note" id="dup" hidden></div>
+    <div class="err"></div>
+    <div class="row"><button type="button" class="ok" data-next>OK</button><span class="key">a scanner's Enter moves you on</span></div>
+  </section>
+  <section class="q">
+    <h2><span class="n">4 →</span><span>Scan or type the RFID code</span></h2>
+    <p class="help">Leave blank if the item has no RFID tag.</p>
+    <input class="in mono" id="tRfid" placeholder="RFID code" autocapitalize="off" spellcheck="false">
+    <div class="err"></div>
+    <div class="row"><button type="button" class="ok" data-next id="rfidOk">Skip</button><span class="key">press <b>Enter ↵</b></span></div>
+  </section>
+  <section class="q">
+    <h2><span class="n">5 →</span><span>Was the item rectified?<span class="req">*</span></span></h2>
+    <div class="choices two">
+      <button type="button" class="choice" data-rect="Yes" aria-pressed="false"><kbd>Y</kbd>Yes</button>
+      <button type="button" class="choice" data-rect="No" aria-pressed="false"><kbd>N</kbd>No</button>
+    </div>
+    <div class="err"></div>
+  </section>
+  <section class="q">
+    <h2><span class="n">6 →</span><span>Any remarks?</span></h2>
+    <p class="help">What was wrong and what was done. Optional.</p>
+    <textarea class="in" id="tRemarks" placeholder="Type your answer here…"></textarea>
+    <div class="err"></div>
+    <div class="row"><button type="button" class="ok" data-next id="remOk">Skip</button><span class="key"><b>Shift + Enter</b> for a new line</span></div>
+  </section>
+  <section class="q">
+    <h2><span class="n">7 →</span><span>Take a picture of the item<span class="req">*</span></span></h2>
+    <div class="shot">
+      <img id="preview" alt="Picture of the item" hidden>
+      <label for="camIn" class="big" id="camBtn" role="button" tabindex="0">Take picture</label>
+      <input type="file" id="camIn" accept="image/*" capture="environment" hidden>
+    </div>
+    <div class="err"></div>
+    <div class="row"><button type="button" class="ok" data-next>OK</button><span class="key">press <b>Enter ↵</b></span></div>
+  </section>
+  <section class="q">
+    <h2><span class="n">✓</span><span>Check and submit</span></h2>
+    <p class="help">Tap any answer to change it.</p>
+    <div class="review" id="review"></div>
+    <div class="err" id="subErr"></div>
+    <div class="row"><button type="submit" class="ok" id="submitBtn">Submit</button><span class="key">press <b>Enter ↵</b></span></div>
+  </section>
+  <section class="q">
+    <div class="done" aria-hidden="true">✓</div>
+    <h2>Item logged</h2>
+    <p class="help" id="doneText" style="margin:0"></p>
+    <div class="row"><button type="button" class="ok" id="again">Log another item</button></div>
+  </section>
+</form>
+<div class="nav" id="nav" hidden><button type="button" id="up" aria-label="Previous">↑</button><button type="button" id="down" aria-label="Next">↓</button></div>
+<dialog id="camDlg"><video id="video" autoplay playsinline muted></video><div class="cap"><button type="button" id="camCancel">Cancel</button><button type="button" class="ok" id="snap">Capture photo</button></div></dialog>
+
+<script>
+// Paste your Apps Script Web app URL (ends in /exec) between the quotes.
+var API_URL = 'https://script.google.com/macros/s/AKfycbxZVnue_GFhhEG0MQMjfdVFzVBNtFdQz0G-CpjvmdRwSwBlbTthn1M3nx7kFc1ZVg6Llg/exec';
+
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  // Talks to Code.gs: google.script.run when opened from Apps Script, otherwise a POST to API_URL.
+  function call(fn, arg){
+    if(window.google && google.script && google.script.run){
+      return new Promise(function(res, rej){ google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](arg); });
+    }
+    if(!/^https:\/\/script\.google\.com\//.test(API_URL)) return Promise.reject(new Error('The form is not connected yet (API_URL is missing).'));
+    return fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: fn, arg: arg }) })
+      .then(function(r){ return r.json(); })
+      .then(function(j){ if(!j.ok) throw new Error(j.error || 'Request failed.'); return j.result; });
+  }
+  var steps = [].slice.call(document.querySelectorAll('.q'));
+  var REVIEW = 8, DONE = 9;
+  var S = { step: 0, type: '', other: false, rect: '', photo: null, busy: false };
+  var TYPES = ['Shirt','T-shirt','Trousers','Suit','Dress','Abaya','Kandura','Bedsheet','Towel','Curtain','Shoes','Bag','Other'];
+  var LETTERS = 'ABCDEFGHIJKLM';
+  function today(){ var d = new Date(); return new Date(d - d.getTimezoneOffset()*6e4).toISOString().slice(0,10); }
+  function fmt(s){ if(!s) return ''; var p = s.split('-'); return p[2]+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+p[1]-1]+' '+p[0]; }
+  function err(i, t){ var e = steps[i].querySelector('.err'); if(e) e.textContent = t || ''; }
+
+  $('tDate').value = today();
+  try { $('tName').value = localStorage.getItem('dispatcherName') || ''; } catch(e) {}
+
+  TYPES.forEach(function(t, i){
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'choice'; b.dataset.type = t; b.dataset.key = LETTERS[i];
+    b.setAttribute('aria-pressed','false');
+    var k = document.createElement('kbd'); k.textContent = LETTERS[i]; b.appendChild(k); b.appendChild(document.createTextNode(t));
+    b.onclick = function(){ pickType(t); }; $('types').appendChild(b);
+  });
+  function pickType(t){
+    [].forEach.call(document.querySelectorAll('#types .choice'), function(c){ c.setAttribute('aria-pressed', c.dataset.type === t); });
+    if(t === 'Other'){ S.other = true; S.type = ''; $('tOther').hidden = false; $('tOther').focus(); }
+    else { S.other = false; S.type = t; $('tOther').hidden = true; setTimeout(next, 260); }
+  }
+  function typeValue(){ return S.other ? $('tOther').value.trim() : S.type; }
+  [].forEach.call(document.querySelectorAll('[data-rect]'), function(b){ b.onclick = function(){ pickRect(b.dataset.rect); }; });
+  function pickRect(v){ S.rect = v; [].forEach.call(document.querySelectorAll('[data-rect]'), function(c){ c.setAttribute('aria-pressed', c.dataset.rect === v); }); setTimeout(next, 260); }
+
+  function focusStep(){
+    var s = steps[S.step]; if(!s) return;
+    var f = [].slice.call(s.querySelectorAll('.in')).filter(function(x){ return !x.hidden; })[0] || s.querySelector('.choice[aria-pressed="true"]') || s.querySelector('.choice, .ok, .big');
+    if(f) f.focus({preventScroll:true});
+  }
+  function go(i, dir){
+    steps.forEach(function(s, k){ s.classList.remove('on','fwd','back'); err(k, ''); });
+    steps[i].classList.add('on', dir < 0 ? 'back' : 'fwd');
+    S.step = i;
+    $('bar').style.width = (Math.min(i, REVIEW) / REVIEW * 100) + '%';
+    $('nav').hidden = (i === 0 || i === DONE);
+    if(i === REVIEW) buildReview();
+    window.scrollTo(0,0); setTimeout(focusStep, 30);
+  }
+  function validate(i){
+    if(i === 0 && !$('tName').value.trim()) return 'Type your name to start.';
+    if(i === 1 && !$('tDate').value) return 'Pick a date.';
+    if(i === 2 && !typeValue()) return S.other ? 'Type the item type.' : 'Pick the item type.';
+    if(i === 3 && !$('tQr').value.trim()) return 'Scan or type the QR code.';
+    if(i === 5 && !S.rect) return 'Choose Yes or No.';
+    if(i === 7 && !S.photo) return 'Take a picture of the item.';
+    return '';
+  }
+  function next(){
+    if(S.step >= REVIEW) return;
+    var e = validate(S.step); if(e){ err(S.step, e); return; }
+    if(S.step === 0){ try { localStorage.setItem('dispatcherName', $('tName').value.trim()); } catch(x) {} }
+    go(S.step + 1, 1);
+  }
+  function prev(){ if(S.step > 0 && S.step <= REVIEW) go(S.step - 1, -1); }
+  [].forEach.call(document.querySelectorAll('[data-next]'), function(b){ b.onclick = next; });
+  $('up').onclick = prev; $('down').onclick = function(){ S.step === REVIEW ? submit() : next(); };
+  $('tRfid').oninput = function(){ $('rfidOk').textContent = this.value.trim() ? 'OK' : 'Skip'; };
+  $('tRemarks').oninput = function(){ $('remOk').textContent = this.value.trim() ? 'OK' : 'Skip'; };
+
+  // Already-logged QR check (runs after typing stops)
+  var qrT;
+  $('tQr').oninput = function(){
+    clearTimeout(qrT); $('dup').hidden = true; var v = this.value.trim(); if(!v) return;
+    qrT = setTimeout(function(){
+      call('checkQr', v).then(function(hit){
+        if(!hit || $('tQr').value.trim() !== v) return;
+        $('dup').textContent = 'This QR was already logged on ' + hit.date + ' (' + hit.type + ', rectified: ' + hit.rectified + '). You can still log it again.';
+        $('dup').hidden = false;
+      }).catch(function(){});
+    }, 600);
+  };
+
+  // ---- Picture: phone camera, PC webcam, or file picker as a last resort ----
+  function isPhone(){ return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || ((navigator.maxTouchPoints || 0) > 0 && matchMedia('(pointer:coarse)').matches); }
+  function setPhoto(fileOrBlob){
+    var url = URL.createObjectURL(fileOrBlob), img = new Image();
+    img.onload = function(){
+      var s = Math.min(1, 1280 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+      c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+      S.photo = c.toDataURL('image/jpeg', 0.8);
+      $('preview').src = S.photo; $('preview').hidden = false; $('camBtn').textContent = 'Retake picture'; err(7, '');
+      var ok = steps[7].querySelector('.ok'); if(ok) setTimeout(function(){ ok.focus(); }, 0);
+    };
+    img.onerror = function(){ err(7, 'That file could not be read as an image. Try again.'); };
+    img.src = url;
+  }
+  var stream = null;
+  function stopCam(){ if(stream){ stream.getTracks().forEach(function(t){ t.stop(); }); stream = null; } }
+  $('camDlg').addEventListener('close', stopCam);
+  $('camCancel').onclick = function(){ $('camDlg').close(); };
+  $('snap').onclick = function(){
+    var v = $('video'); if(!v.videoWidth) return;
+    var c = document.createElement('canvas'); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0);
+    c.toBlob(function(b){ $('camDlg').close(); if(b) setPhoto(b); }, 'image/jpeg', 0.85);
+  };
+  // Phones: the label opens the phone camera natively. PCs: try the live webcam first.
+  $('camBtn').addEventListener('keydown', function(e){ if(e.key === ' '){ e.preventDefault(); $('camBtn').click(); } });
+  $('camBtn').addEventListener('click', function(e){
+    $('camIn').value = '';
+    if(isPhone() || !(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) return;
+    e.preventDefault();
+    navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 } }, audio: false }).then(function(s){
+      stream = s; $('video').srcObject = s; $('camDlg').showModal();
+    }).catch(function(){
+      err(7, 'The webcam could not be opened. Allow camera access in the browser (camera icon in the address bar), or choose a photo instead.');
+      $('camIn').click();
+    });
+  });
+  $('camIn').onchange = function(e){ var f = e.target.files[0]; if(f) setPhoto(f); };
+
+  function buildReview(){
+    var rows = [['Your name', $('tName').value.trim(), 0], ['Date', fmt($('tDate').value), 1], ['Item type', typeValue(), 2],
+      ['QR code', $('tQr').value.trim(), 3], ['RFID code', $('tRfid').value.trim() || '—', 4], ['Rectified', S.rect, 5],
+      ['Remarks', $('tRemarks').value.trim() || '—', 6], ['Picture', null, 7]];
+    var box = $('review'); box.innerHTML = '';
+    rows.forEach(function(r){
+      var b = document.createElement('button'); b.type = 'button';
+      var a = document.createElement('span'); a.textContent = r[0];
+      var v = document.createElement('span');
+      if(r[0] === 'Picture'){ var im = document.createElement('img'); im.src = S.photo; im.alt = 'Item picture'; v.appendChild(im); }
+      else v.textContent = r[1];
+      b.appendChild(a); b.appendChild(v); b.onclick = function(){ go(r[2], -1); }; box.appendChild(b);
+    });
+    $('subErr').textContent = '';
+  }
+  function submit(){
+    if(S.step !== REVIEW || S.busy) return;
+    for(var i = 0; i <= 7; i++){ var e = validate(i); if(e){ go(i, -1); (function(k, m){ setTimeout(function(){ err(k, m); }, 40); })(i, e); return; } }
+    S.busy = true; $('submitBtn').disabled = true; $('submitBtn').textContent = 'Submitting…';
+    var data = { name: $('tName').value.trim(), date: $('tDate').value, itemType: typeValue(), qr: $('tQr').value.trim(),
+      rfid: $('tRfid').value.trim(), rectified: S.rect, remarks: $('tRemarks').value.trim(), photo: S.photo };
+    call('submitItem', data).then(function(){
+        S.busy = false; $('submitBtn').disabled = false; $('submitBtn').textContent = 'Submit';
+        $('doneText').textContent = 'Thanks, ' + data.name + '. ' + data.itemType + ' · ' + data.qr + ' is now in the log.';
+        go(DONE, 1);
+      }).catch(function(x){
+        S.busy = false; $('submitBtn').disabled = false; $('submitBtn').textContent = 'Submit';
+        $('subErr').textContent = (x && x.message ? x.message : 'Could not submit.') + ' Check your connection and press Submit again.';
+      });
+  }
+  $('f').addEventListener('submit', function(e){ e.preventDefault(); submit(); });
+  $('again').onclick = function(){
+    S.type = ''; S.other = false; S.rect = ''; S.photo = null;
+    ['tQr','tRfid','tRemarks','tOther'].forEach(function(id){ $(id).value = ''; });
+    $('tOther').hidden = true; $('preview').hidden = true; $('camBtn').textContent = 'Take picture'; $('dup').hidden = true;
+    $('rfidOk').textContent = 'Skip'; $('remOk').textContent = 'Skip';
+    [].forEach.call(document.querySelectorAll('.choice'), function(c){ c.setAttribute('aria-pressed','false'); });
+    go(2, 1);
+  };
+
+  document.addEventListener('keydown', function(e){
+    if($('camDlg').open) return;
+    var t = e.target, tag = t.tagName;
+    if(e.key === 'Enter'){
+      if(tag === 'BUTTON' || t.id === 'camBtn'){ if(t.id === 'camBtn'){ e.preventDefault(); t.click(); } return; }
+      if(tag === 'TEXTAREA' && e.shiftKey) return;
+      e.preventDefault();
+      if(S.step === DONE) $('again').click(); else if(S.step === REVIEW) submit(); else next();
+      return;
+    }
+    if(tag === 'INPUT' || tag === 'TEXTAREA' || e.metaKey || e.ctrlKey || e.altKey) return;
+    var k = e.key.length === 1 ? e.key.toUpperCase() : '';
+    if(S.step === 2 && k){ var c = document.querySelector('#types .choice[data-key="' + k + '"]'); if(c){ e.preventDefault(); c.click(); } }
+    if(S.step === 5 && (k === 'Y' || k === 'N')){ e.preventDefault(); pickRect(k === 'Y' ? 'Yes' : 'No'); }
+  });
+  setTimeout(focusStep, 50);
+})();
+</script>
+</body>
+</html>
