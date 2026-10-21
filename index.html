@@ -98,8 +98,13 @@ dialog .cap .go{border:0;background:var(--accent);color:var(--accent-fg);font-we
           <div class="types" id="types" role="group" aria-labelledby="typeLbl"></div>
           <input id="tOther" placeholder="Type the item type…" hidden>
           <div class="err"></div></div>
-        <div class="f" id="fBrand"><label for="tBrand">Brand <span class="opt">(optional — check the label)</span></label>
-          <input id="tBrand" placeholder="e.g. Zara, Ikea, Marks &amp; Spencer" autocomplete="off" spellcheck="false"><div class="err"></div></div>
+        <div class="row2">
+          <div class="f" id="fColor"><label for="tColor">Colour <span class="opt">(optional)</span></label>
+            <input id="tColor" list="colorList" placeholder="e.g. White, Navy" autocomplete="off" spellcheck="false"><div class="err"></div></div>
+          <div class="f" id="fBrand"><label for="tBrand">Brand <span class="opt">(optional — check the label)</span></label>
+            <input id="tBrand" placeholder="e.g. Zara, Ikea" autocomplete="off" spellcheck="false"><div class="err"></div></div>
+        </div>
+        <datalist id="colorList"><option value="White"><option value="Off-White"><option value="Black"><option value="Grey"><option value="Navy"><option value="Blue"><option value="Light Blue"><option value="Green"><option value="Red"><option value="Pink"><option value="Beige"><option value="Brown"><option value="Yellow"><option value="Purple"><option value="Orange"><option value="Multi"></datalist>
         <div class="row2">
           <div class="f" id="fQr"><label for="tQr">Item QR code <span class="req">*</span></label>
             <input id="tQr" class="mono" placeholder="Scan or type" autocapitalize="off" spellcheck="false" inputmode="text"><div class="err"></div></div>
@@ -196,13 +201,13 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbxZVnue_GFhhEG0MQMjfdVFzV
   }; });
 
   // Enter moves to the next field (scanners send Enter after a code)
-  var order = ['tName','tDate','tBrand','tQr','tRfid','tRemarks'];
+  var order = ['tName','tDate','tColor','tBrand','tQr','tRfid','tRemarks'];
   document.addEventListener('keydown', function(e){
     if(e.key !== 'Enter' || $('camDlg').open) return;
     var t = e.target;
     if(t.id === 'camBtn'){ e.preventDefault(); t.click(); return; }
     if(t.tagName === 'TEXTAREA' || t.tagName === 'BUTTON') return;
-    if(t.tagName === 'INPUT'){ e.preventDefault(); var i = order.indexOf(t.id); if(t.id === 'tOther') i = order.indexOf('tBrand') - 1;
+    if(t.tagName === 'INPUT'){ e.preventDefault(); var i = order.indexOf(t.id); if(t.id === 'tOther') i = order.indexOf('tColor') - 1;
       var n = order[i + 1]; if(n) $(n).focus(); else $('camBtn').focus(); }
   });
   ['tName','tDate','tQr','tOther'].forEach(function(id){ $(id).addEventListener('input', function(){ setErr(id === 'tOther' ? 'fType' : 'f' + id.slice(1), ''); }); });
@@ -229,6 +234,10 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbxZVnue_GFhhEG0MQMjfdVFzV
       c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
       c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
       S.photo = c.toDataURL('image/jpeg', 0.8);
+      // Small thumbnail stored in the Sheet so the dashboard can show it
+      var ts = Math.min(1, 120 / Math.max(img.width, img.height)), t = document.createElement('canvas');
+      t.width = Math.max(1, Math.round(img.width * ts)); t.height = Math.max(1, Math.round(img.height * ts));
+      t.getContext('2d').drawImage(img, 0, 0, t.width, t.height); S.thumb = t.toDataURL('image/jpeg', 0.6);
       $('preview').src = S.photo; $('preview').hidden = false; $('camText').textContent = 'Retake picture'; $('camHint').textContent = 'Picture added.'; setErr('fPhoto', '');
     };
     img.onerror = function(){ setErr('fPhoto', 'That file could not be read as an image. Try again.'); };
@@ -276,8 +285,8 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbxZVnue_GFhhEG0MQMjfdVFzV
     var errs = validate();
     if(errs.length){ $('subErr').textContent = 'Please fill in the highlighted fields.'; $(errs[0][0]).scrollIntoView({behavior:'smooth', block:'center'}); return; }
     S.busy = true; $('submitBtn').disabled = true; $('submitBtn').textContent = 'Submitting…';
-    var data = { name: $('tName').value.trim(), date: $('tDate').value, itemType: typeValue(), brand: $('tBrand').value.trim(), qr: $('tQr').value.trim(),
-      rfid: $('tRfid').value.trim(), rectified: S.rect, remarks: $('tRemarks').value.trim(), photo: S.photo };
+    var data = { name: $('tName').value.trim(), date: $('tDate').value, itemType: typeValue(), brand: $('tBrand').value.trim(), color: $('tColor').value.trim(), qr: $('tQr').value.trim(),
+      rfid: $('tRfid').value.trim(), rectified: S.rect, remarks: $('tRemarks').value.trim(), photo: S.photo, thumb: S.thumb || '' };
     call('submitItem', data).then(function(){
       $('doneText').textContent = 'Thanks, ' + data.name + '. ' + data.itemType + ' · ' + data.qr + ' is now in the log.';
       $('formView').hidden = true; $('doneView').hidden = false; window.scrollTo(0, 0); $('again').focus();
@@ -288,8 +297,8 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbxZVnue_GFhhEG0MQMjfdVFzV
 
   // Log another item: everything cleared, including the name
   $('again').onclick = function(){
-    S.type = ''; S.other = false; S.rect = ''; S.photo = null; nameTyped = false;
-    ['tName','tBrand','tQr','tRfid','tRemarks','tOther'].forEach(function(id){ $(id).value = ''; });
+    S.type = ''; S.other = false; S.rect = ''; S.photo = null; S.thumb = ''; nameTyped = false;
+    ['tName','tColor','tBrand','tQr','tRfid','tRemarks','tOther'].forEach(function(id){ $(id).value = ''; });
     $('tDate').value = today(); $('tOther').hidden = true; $('preview').hidden = true; $('dup').hidden = true;
     $('camText').textContent = 'Take picture'; $('camHint').textContent = 'Opens your camera.'; $('camIn').value = '';
     [].forEach.call(document.querySelectorAll('[aria-pressed]'), function(c){ c.setAttribute('aria-pressed','false'); });
